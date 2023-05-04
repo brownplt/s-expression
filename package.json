@@ -1,0 +1,20 @@
+{
+  "name": "@lukc1024/s-expression",
+  "version": "1.0.0",
+  "description": "An S-expression parser",
+  "main": "src/index.bs.js",
+  "scripts": {
+    "test": "echo \"Error: no test specified\" && exit 1",
+    "res:build": "rescript",
+    "res:dev": "rescript build -w"
+  },
+  "author": {
+    "name": "Kuang-Chen Lu",
+    "email": "kuang-chen_lu@brown.edu",
+    "url": "https://lukc1024.github.io"
+  },
+  "license": "MIT",
+  "dependencies": {
+    "rescript": "^10.1.4"
+  }
+}
