@@ -58,7 +58,7 @@ function caseSource(source) {
         ];
 }
 
-var ParseError = /* @__PURE__ */Caml_exceptions.create("Index.ParseError");
+var ParseError = /* @__PURE__ */Caml_exceptions.create("S_expression.ParseError");
 
 function parseErrorAsString(err) {
   if (typeof err === "number") {
@@ -218,9 +218,9 @@ function parseString(start, src) {
   return loop(/* [] */0, src);
 }
 
-var EOF = /* @__PURE__ */Caml_exceptions.create("Index.EOF");
+var EOF = /* @__PURE__ */Caml_exceptions.create("S_expression.EOF");
 
-var WantSExprFoundRP = /* @__PURE__ */Caml_exceptions.create("Index.WantSExprFoundRP");
+var WantSExprFoundRP = /* @__PURE__ */Caml_exceptions.create("S_expression.WantSExprFoundRP");
 
 function parseOne(_src) {
   while(true) {

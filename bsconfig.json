@@ -1,5 +1,5 @@
 {
-    "name": "your-project-name",
+    "name": "@lukc1024/s-expression",
     "sources": [
         {
             "dir": "src",
