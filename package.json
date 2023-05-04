@@ -8,13 +8,21 @@
     "res:build": "rescript",
     "res:dev": "rescript build -w"
   },
-  "author": {
-    "name": "Kuang-Chen Lu",
-    "email": "kuang-chen_lu@brown.edu",
-    "url": "https://lukc1024.github.io"
-  },
+  "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukc1024.github.io)",
   "license": "MIT",
   "dependencies": {
     "rescript": "^10.1.4"
-  }
+  },
+  "directories": {
+    "lib": "lib"
+  },
+  "devDependencies": {},
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/LuKC1024/s-expression.git"
+  },
+  "bugs": {
+    "url": "https://github.com/LuKC1024/s-expression/issues"
+  },
+  "homepage": "https://github.com/LuKC1024/s-expression#readme"
 }
