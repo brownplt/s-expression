@@ -8,6 +8,7 @@ An S-expression parser written in ReScript.
 - symbols
 - lists in `( )`
 - lists in `[ ]`
+- vectors
 
 ## Not supported feature
 
@@ -15,4 +16,3 @@ An S-expression parser written in ReScript.
   - line comments `; `
   - block comments `#| |#`
   - S-expression comments `#; `
-- quoted expressions (`'<something>` means `(quote <something>)` in Lisp)

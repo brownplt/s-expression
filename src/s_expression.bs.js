@@ -67,14 +67,19 @@ function parseErrorAsString(err) {
     } else {
       return "Reached the end of the file while processing a string.";
     }
-  } else if (err.TAG === /* WantEscapableCharFound */0) {
-    return "Found an unexpected escape sequence (\\" + err._0 + ").";
-  } else {
-    return "Found a closing " + (
-            err._1 ? "square" : "round"
-          ) + " bracket but this list starts with a " + (
-            err._0 ? "square" : "round"
-          ) + " bracket.";
+  }
+  switch (err.TAG | 0) {
+    case /* WantOpenBracketFound */0 :
+        return "Found an unexpected string (" + err._0 + ") after \`#\`.";
+    case /* WantEscapableCharFound */1 :
+        return "Found an unexpected escape sequence (\\" + err._0 + ").";
+    case /* MismatchedBracket */2 :
+        return "Found a closing " + (
+                err._1 ? "square" : "round"
+              ) + " bracket but this list starts with a " + (
+                err._0 ? "square" : "round"
+              ) + " bracket.";
+    
   }
 }
 
@@ -187,7 +192,7 @@ function parseString(start, src) {
                 throw {
                       RE_EXN_ID: ParseError,
                       _1: {
-                        TAG: /* WantEscapableCharFound */0,
+                        TAG: /* WantEscapableCharFound */1,
                         _0: chr$1
                       },
                       Error: new Error()
@@ -230,8 +235,57 @@ function parseOne(_src) {
     if (match !== undefined) {
       var chr = match[0];
       switch (chr) {
+        case "#" :
+            var match$1 = caseSource(match[1]);
+            if (match$1 !== undefined) {
+              var chr$1 = match$1[0];
+              switch (chr$1) {
+                case "(" :
+                    return startParseList(/* Vector */1, /* Round */0, start, match$1[1]);
+                case "[" :
+                    return startParseList(/* Vector */1, /* Square */1, start, match$1[1]);
+                default:
+                  throw {
+                        RE_EXN_ID: ParseError,
+                        _1: {
+                          TAG: /* WantOpenBracketFound */0,
+                          _0: chr$1
+                        },
+                        Error: new Error()
+                      };
+              }
+            } else {
+              throw {
+                    RE_EXN_ID: EOF,
+                    Error: new Error()
+                  };
+            }
+        case "'" :
+            var match$2 = parseOne(match[1]);
+            var src$1 = match$2[1];
+            return [
+                    Utilities.annotate({
+                          TAG: /* Sequence */1,
+                          _0: /* List */0,
+                          _1: /* Round */0,
+                          _2: {
+                            hd: Utilities.annotate({
+                                  TAG: /* Atom */0,
+                                  _0: {
+                                    TAG: /* Sym */1,
+                                    _0: "quote"
+                                  }
+                                }, start, src$1.srcloc),
+                            tl: {
+                              hd: match$2[0],
+                              tl: /* [] */0
+                            }
+                          }
+                        }, start, src$1.srcloc),
+                    src$1
+                  ];
         case "(" :
-            return startParseList(/* Round */0, start, match[1]);
+            return startParseList(/* List */0, /* Round */0, start, match[1]);
         case ")" :
             throw {
                   RE_EXN_ID: WantSExprFoundRP,
@@ -240,7 +294,7 @@ function parseOne(_src) {
                   Error: new Error()
                 };
         case "[" :
-            return startParseList(/* Square */1, start, match[1]);
+            return startParseList(/* List */0, /* Square */1, start, match[1]);
         case "\"" :
             return parseString(start, match[1]);
         case "]" :
@@ -251,11 +305,11 @@ function parseOne(_src) {
                   Error: new Error()
                 };
         default:
-          var src$1 = match[1];
+          var src$2 = match[1];
           if (!/\s+/ig.test(chr)) {
-            return parseSymbol(start, chr, src$1);
+            return parseSymbol(start, chr, src$2);
           }
-          _src = src$1;
+          _src = src$2;
           continue ;
       }
     } else {
@@ -267,7 +321,7 @@ function parseOne(_src) {
   };
 }
 
-function startParseList(bracket1, start, src) {
+function startParseList(sequenceKind, bracket1, start, src) {
   var _elms = /* [] */0;
   var _src = src;
   while(true) {
@@ -290,11 +344,12 @@ function startParseList(bracket1, start, src) {
         var bracket2 = exn._1;
         if (bracket1 === bracket2) {
           var src$2 = exn._2;
-          var e_1 = Belt_List.reverse(elms);
+          var e_2 = Belt_List.reverse(elms);
           var e = {
-            TAG: /* List */1,
-            _0: bracket1,
-            _1: e_1
+            TAG: /* Sequence */1,
+            _0: sequenceKind,
+            _1: bracket1,
+            _2: e_2
           };
           return [
                   Utilities.annotate(e, start, src$2.srcloc),
@@ -304,7 +359,7 @@ function startParseList(bracket1, start, src) {
         throw {
               RE_EXN_ID: ParseError,
               _1: {
-                TAG: /* MismatchedBracket */1,
+                TAG: /* MismatchedBracket */2,
                 _0: bracket1,
                 _1: bracket2
               },
@@ -358,14 +413,24 @@ function stringOfSExpr(e) {
       return s._0;
     }
   }
-  var match$1 = match._1;
-  if (!match$1) {
+  if (match._0) {
+    var match$1 = match._2;
+    if (!match$1) {
+      return "#()";
+    }
+    var stringOfXs = $$String.concat("", Belt_List.map(match$1.tl, (function (x) {
+                return " " + stringOfSExpr(x);
+              })));
+    return "#(" + stringOfSExpr(match$1.hd) + stringOfXs + ")";
+  }
+  var match$2 = match._2;
+  if (!match$2) {
     return "()";
   }
-  var stringOfXs = $$String.concat("", Belt_List.map(match$1.tl, (function (x) {
+  var stringOfXs$1 = $$String.concat("", Belt_List.map(match$2.tl, (function (x) {
               return " " + stringOfSExpr(x);
             })));
-  return "(" + stringOfSExpr(match$1.hd) + stringOfXs + ")";
+  return "(" + stringOfSExpr(match$2.hd) + stringOfXs$1 + ")";
 }
 
 export {

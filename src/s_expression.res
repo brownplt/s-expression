@@ -25,9 +25,13 @@ let bracketAsString = bracket => {
   }
 }
 
+type sequenceKind =
+  | List
+  | Vector
+
 type rec s_expr =
   | Atom(atom)
-  | List(bracket, list<annotated<s_expr>>)
+  | Sequence(sequenceKind, bracket, list<annotated<s_expr>>)
 
 type source = {srcloc: srcloc, i: int, content: string}
 
@@ -58,6 +62,7 @@ let caseSource = (source): option<(string, source)> => {
 type parseError =
   | WantListFoundEOF
   | WantStringFoundEOF
+  | WantOpenBracketFound(string)
   | WantEscapableCharFound(string)
   | MismatchedBracket(bracket, bracket)
 exception ParseError(parseError)
@@ -65,6 +70,7 @@ let parseErrorAsString: parseError => string = err => {
   switch err {
   | WantListFoundEOF => "Reached the end of the file while processing a list."
   | WantStringFoundEOF => "Reached the end of the file while processing a string."
+  | WantOpenBracketFound(string) => `Found an unexpected string (${string}) after \`#\`.`
   | WantEscapableCharFound(string) => `Found an unexpected escape sequence (\\${string}).`
   | MismatchedBracket(start, end) =>
     `Found a closing ${bracketAsString(end)} bracket but this list starts with a ${bracketAsString(
@@ -142,8 +148,26 @@ let rec parseOne = (src: source): (annotated<s_expr>, source) => {
   let start = src.srcloc
   switch caseSource(src) {
   | None => raise(EOF)
-  | Some(("(", src)) => startParseList(Round, start, src)
-  | Some(("[", src)) => startParseList(Square, start, src)
+  | Some(("'", src)) => {
+      let (e, src) = parseOne(src)
+      (
+        annotate(
+          Sequence(List, Round, list{annotate(Atom(Sym("quote")), start, src.srcloc), e}),
+          start,
+          src.srcloc,
+        ),
+        src,
+      )
+    }
+  | Some(("#", src)) =>
+    switch caseSource(src) {
+    | None => raise(EOF)
+    | Some(("(", src)) => startParseList(Vector, Round, start, src)
+    | Some(("[", src)) => startParseList(Vector, Square, start, src)
+    | Some((chr, _src)) => raise(ParseError(WantOpenBracketFound(chr)))
+    }
+  | Some(("(", src)) => startParseList(List, Round, start, src)
+  | Some(("[", src)) => startParseList(List, Square, start, src)
   | Some((")", src)) => raise(WantSExprFoundRP(Round, src))
   | Some(("]", src)) => raise(WantSExprFoundRP(Square, src))
   | Some((`"`, src)) => parseString(start, src)
@@ -156,14 +180,14 @@ let rec parseOne = (src: source): (annotated<s_expr>, source) => {
     }
   }
 }
-and startParseList = (bracket1, start, src): (annotated<s_expr>, source) => {
+and startParseList = (sequenceKind, bracket1, start, src): (annotated<s_expr>, source) => {
   let rec parseList = (elms, src): (annotated<s_expr>, source) => {
     switch parseOne(src) {
     | (elm, src) => parseList(list{elm, ...elms}, src)
     | exception EOF => raise(ParseError(WantListFoundEOF))
     | exception WantSExprFoundRP(bracket2, src) =>
       if bracket1 == bracket2 {
-        let e = List(bracket1, List.reverse(elms))
+        let e = Sequence(sequenceKind, bracket1, List.reverse(elms))
         (annotate(e, start, src.srcloc), src)
       } else {
         raise(ParseError(MismatchedBracket(bracket1, bracket2)))
@@ -187,8 +211,13 @@ let rec stringOfSExpr = (e: annotated<s_expr>) =>
   switch e.it {
   | Atom(Sym(s)) => s
   | Atom(Str(s)) => "str:" ++ s
-  | List(_b, list{}) => "()"
-  | List(_b, list{x, ...xs}) => {
+  | Sequence(Vector, _b, list{}) => "#()"
+  | Sequence(Vector, _b, list{x, ...xs}) => {
+      let stringOfXs = String.concat("", List.map(xs, x => " " ++ stringOfSExpr(x)))
+      "#(" ++ stringOfSExpr(x) ++ stringOfXs ++ ")"
+    }
+  | Sequence(List, _b, list{}) => "()"
+  | Sequence(List, _b, list{x, ...xs}) => {
       let stringOfXs = String.concat("", List.map(xs, x => " " ++ stringOfSExpr(x)))
       "(" ++ stringOfSExpr(x) ++ stringOfXs ++ ")"
     }
