@@ -16,3 +16,9 @@ An S-expression parser written in ReScript.
   - line comments `; `
   - block comments `#| |#`
   - S-expression comments `#; `
+
+## Installation
+
+```
+npm i @lukc1024/s-expression
+```
