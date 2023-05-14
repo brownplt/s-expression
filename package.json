@@ -25,5 +25,8 @@
   "bugs": {
     "url": "https://github.com/LuKC1024/s-expression/issues"
   },
-  "homepage": "https://github.com/LuKC1024/s-expression#readme"
+  "homepage": "https://github.com/LuKC1024/s-expression#readme",
+  "keywords": [
+    "S-expression"
+  ]
 }
