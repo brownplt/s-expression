@@ -2,9 +2,18 @@
 
 import * as $$String from "rescript/lib/es6/string.js";
 import * as Belt_List from "rescript/lib/es6/belt_List.js";
-import * as Utilities from "./utilities.bs.js";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
+
+function annotate(it, begin, end) {
+  return {
+          it: it,
+          ann: {
+            begin: begin,
+            end: end
+          }
+        };
+}
 
 function bracketAsString(bracket) {
   if (bracket) {
@@ -102,7 +111,7 @@ function parseSymbol(start, firstCh, src) {
         }
       };
       return [
-              Utilities.annotate(e, start, src$1.srcloc),
+              annotate(e, start, src$1.srcloc),
               src$1
             ];
     }
@@ -151,7 +160,7 @@ function parseString(start, src) {
             }
           };
           return [
-                  Utilities.annotate(e, start, src$1.srcloc),
+                  annotate(e, start, src$1.srcloc),
                   src$1
                 ];
         }
@@ -264,12 +273,12 @@ function parseOne(_src) {
             var match$2 = parseOne(match[1]);
             var src$1 = match$2[1];
             return [
-                    Utilities.annotate({
+                    annotate({
                           TAG: /* Sequence */1,
                           _0: /* List */0,
                           _1: /* Round */0,
                           _2: {
-                            hd: Utilities.annotate({
+                            hd: annotate({
                                   TAG: /* Atom */0,
                                   _0: {
                                     TAG: /* Sym */1,
@@ -352,7 +361,7 @@ function startParseList(sequenceKind, bracket1, start, src) {
             _2: e_2
           };
           return [
-                  Utilities.annotate(e, start, src$2.srcloc),
+                  annotate(e, start, src$2.srcloc),
                   src$2
                 ];
         }
@@ -434,6 +443,7 @@ function stringOfSExpr(e) {
 }
 
 export {
+  annotate ,
   bracketAsString ,
   stringAsSource ,
   advance ,
