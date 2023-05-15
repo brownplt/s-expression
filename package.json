@@ -1,9 +1,9 @@
 {
   "name": "@lukc1024/s-expression",
-  "version": "1.1.0",
+  "version": "2.0.0",
   "description": "An S-expression parser",
   "type": "module",
-  "main": "src/s_expression.bs.js",
+  "main": "src/SExpression.bs.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
     "res:build": "rescript",

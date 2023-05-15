@@ -1,12 +1,5 @@
 open Belt
 
-type srcloc = {ln: int, ch: int}
-type srcrange = {begin: srcloc, end: srcloc}
-type annotated<'t> = {it: 't, ann: srcrange}
-let annotate = (it, begin, end) => {
-  {it, ann: {begin, end}}
-}
-
 /*
 Okay, I find this file gets really confusing. I am using exceptions for two purposes:
 
@@ -17,29 +10,77 @@ Let's leave the first kind of exceptions as their own kind, and group all second
 exception in one data type.
 */
 
-type atom =
-  | Str(string)
-  | Sym(string)
+module Atom = {
+  type t =
+    | Str(string)
+    | Sym(string)
 
-type bracket =
-  | Round
-  | Square
-let bracketAsString = bracket => {
-  switch bracket {
-  | Square => "square"
-  | Round => "round"
+  let toString = x => {
+    let escape = s => {
+      let s = Js.String.replaceByRe(%re("/\\n/g"), "\n", s)
+      let s = Js.String.replaceByRe(%re("/\\t/g"), "\t", s)
+      let s = Js.String.replaceByRe(%re("/\\r/g"), "\r", s)
+      let s = Js.String.replaceByRe(%re("/\\\\/g"), "\\", s)
+      let s = Js.String.replaceByRe(%re("/\\\"/g"), "\"", s)
+      s
+    }
+    switch x {
+    | Sym(s) => s
+    | Str(s) => `"${escape(s)}"`
+    }
   }
 }
+type atom = Atom.t
+
+module Bracket = {
+  type t =
+    | Round
+    | Square
+  let toString = t => {
+    switch t {
+    | Square => "square"
+    | Round => "round"
+    }
+  }
+  let toWrapper = t => {
+    switch t {
+    | Square => ("[", "]")
+    | Round => ("(", ")")
+    }
+  }
+}
+type bracket = Bracket.t
+
+type srcloc = {ln: int, ch: int}
+type srcrange = {begin: srcloc, end: srcloc}
+type annotated<'t> = {it: 't, ann: srcrange}
 
 type sequenceKind =
   | List
   | Vector
 
-type rec s_expr =
+type rec t =
   | Atom(atom)
-  | Sequence(sequenceKind, bracket, list<annotated<s_expr>>)
+  | Sequence(sequenceKind, bracket, list<annotated<t>>)
+
+let rec toString = (e: annotated<t>) =>
+  switch e.it {
+  | Atom(x) => Atom.toString(x)
+  | Sequence(Vector, b, xs) => {
+      let (a, z) = Bracket.toWrapper(b)
+      `#${a}${String.concat(" ", xs->List.map(toString))}${z}`
+    }
+  | Sequence(List, b, xs) => {
+      let (a, z) = Bracket.toWrapper(b)
+      `${a}${String.concat(" ", xs->List.map(toString))}${z}`
+    }
+  }
 
 type source = {srcloc: srcloc, i: int, content: string}
+
+let annotate = (it, begin, end) => {
+  {it, ann: {begin, end}}
+}
 
 let stringAsSource = s => {
   {srcloc: {ln: 0, ch: 0}, i: 0, content: s}
@@ -65,28 +106,30 @@ let caseSource = (source): option<(string, source)> => {
   }
 }
 
-type parseError =
-  | WantListFoundEOF
-  | WantStringFoundEOF
-  | WantOpenBracketFound(string)
-  | WantEscapableCharFound(string)
-  | MismatchedBracket(bracket, bracket)
-exception ParseError(parseError)
-let parseErrorAsString: parseError => string = err => {
-  switch err {
-  | WantListFoundEOF => "Reached the end of the file while processing a list."
-  | WantStringFoundEOF => "Reached the end of the file while processing a string."
-  | WantOpenBracketFound(string) => `Found an unexpected string (${string}) after \`#\`.`
-  | WantEscapableCharFound(string) => `Found an unexpected escape sequence (\\${string}).`
-  | MismatchedBracket(start, end) =>
-    `Found a closing ${bracketAsString(end)} bracket but this list starts with a ${bracketAsString(
-        start,
-      )} bracket.`
+module Error = {
+  type t =
+    | WantListFoundEOF
+    | WantStringFoundEOF
+    | WantOpenBracketFound(string)
+    | WantEscapableCharFound(string)
+    | MismatchedBracket(bracket, bracket)
+  let toString: t => string = err => {
+    switch err {
+    | WantListFoundEOF => "Reached the end of the file while processing a list."
+    | WantStringFoundEOF => "Reached the end of the file while processing a string."
+    | WantOpenBracketFound(string) => `Found an unexpected string (${string}) after \`#\`.`
+    | WantEscapableCharFound(string) => `Found an unexpected escape sequence (\\${string}).`
+    | MismatchedBracket(start, end) =>
+      `Found a closing ${Bracket.toString(
+          end,
+        )} bracket but this list starts with a ${Bracket.toString(start)} bracket.`
+    }
   }
 }
+exception ParseError(Error.t)
 
-let parseSymbol = (start, firstCh, src: source): (annotated<s_expr>, source) => {
-  let rec loop = (cs, src: source): (annotated<s_expr>, source) => {
+let parseSymbol = (start, firstCh, src: source): (annotated<t>, source) => {
+  let rec loop = (cs, src: source): (annotated<t>, source) => {
     let end = () => {
       let e = Atom(Sym(String.concat("", List.reverse(cs))))
       (annotate(e, start, src.srcloc), src)
@@ -110,8 +153,8 @@ let parseSymbol = (start, firstCh, src: source): (annotated<s_expr>, source) => 
   loop(list{firstCh}, src)
 }
 
-let parseString = (start: srcloc, src: source): (annotated<s_expr>, source) => {
-  let rec loop = (cs, src): (annotated<s_expr>, source) => {
+let parseString = (start: srcloc, src: source): (annotated<t>, source) => {
+  let rec loop = (cs, src): (annotated<t>, source) => {
     switch caseSource(src) {
     | None => raise(ParseError(WantStringFoundEOF))
     | Some((`"`, src)) => {
@@ -127,7 +170,7 @@ let parseString = (start: srcloc, src: source): (annotated<s_expr>, source) => {
       }
     }
   }
-  and escaping = (cs, src): (annotated<s_expr>, source) => {
+  and escaping = (cs, src): (annotated<t>, source) => {
     switch caseSource(src) {
     | None => raise(ParseError(WantStringFoundEOF))
     | Some((chr, src)) =>
@@ -150,7 +193,7 @@ let parseString = (start: srcloc, src: source): (annotated<s_expr>, source) => {
 
 exception EOF
 exception WantSExprFoundRP(bracket, source)
-let rec parseOne = (src: source): (annotated<s_expr>, source) => {
+let rec parseOne = (src: source): (annotated<t>, source) => {
   let start = src.srcloc
   switch caseSource(src) {
   | None => raise(EOF)
@@ -168,7 +211,7 @@ let rec parseOne = (src: source): (annotated<s_expr>, source) => {
   | Some(("#", src)) =>
     switch caseSource(src) {
     | None => raise(EOF)
-    | Some(("(", src)) => startParseList(Vector, Round, start, src)
+    | Some(("(", src)) => startParseList(Vector, Bracket.Round, start, src)
     | Some(("[", src)) => startParseList(Vector, Square, start, src)
     | Some((chr, _src)) => raise(ParseError(WantOpenBracketFound(chr)))
     }
@@ -186,8 +229,8 @@ let rec parseOne = (src: source): (annotated<s_expr>, source) => {
     }
   }
 }
-and startParseList = (sequenceKind, bracket1, start, src): (annotated<s_expr>, source) => {
-  let rec parseList = (elms, src): (annotated<s_expr>, source) => {
+and startParseList = (sequenceKind, bracket1, start, src): (annotated<t>, source) => {
+  let rec parseList = (elms, src): (annotated<t>, source) => {
     switch parseOne(src) {
     | (elm, src) => parseList(list{elm, ...elms}, src)
     | exception EOF => raise(ParseError(WantListFoundEOF))
@@ -203,28 +246,17 @@ and startParseList = (sequenceKind, bracket1, start, src): (annotated<s_expr>, s
   parseList(list{}, src)
 }
 
-let parseMany = (src: source) => {
+let fromStringBeginning = (src: string) => {
+  let (term, src) = parseOne(stringAsSource(src))
+  (term, src.i)
+}
+
+let fromString = (src: string) => {
   let rec loop = (elms, src) => {
     switch parseOne(src) {
     | (elm, src) => loop(list{elm, ...elms}, src)
     | exception EOF => List.reverse(elms)
     }
   }
-  loop(list{}, src)
+  loop(list{}, stringAsSource(src))
 }
-
-let rec stringOfSExpr = (e: annotated<s_expr>) =>
-  switch e.it {
-  | Atom(Sym(s)) => s
-  | Atom(Str(s)) => "str:" ++ s
-  | Sequence(Vector, _b, list{}) => "#()"
-  | Sequence(Vector, _b, list{x, ...xs}) => {
-      let stringOfXs = String.concat("", List.map(xs, x => " " ++ stringOfSExpr(x)))
-      "#(" ++ stringOfSExpr(x) ++ stringOfXs ++ ")"
-    }
-  | Sequence(List, _b, list{}) => "()"
-  | Sequence(List, _b, list{x, ...xs}) => {
-      let stringOfXs = String.concat("", List.map(xs, x => " " ++ stringOfSExpr(x)))
-      "(" ++ stringOfSExpr(x) ++ stringOfXs ++ ")"
-    }
-  }
