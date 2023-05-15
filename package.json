@@ -6,8 +6,8 @@
   "main": "src/SExpression.bs.js",
   "scripts": {
     "test": "echo \"Error: no test specified\" && exit 1",
-    "res:build": "rescript",
-    "res:dev": "rescript build -w"
+    "rescript": "rescript build -w",
+    "publish": "npm publish --access public"
   },
   "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukc1024.github.io)",
   "license": "MIT",
