@@ -1,6 +1,6 @@
 {
-  "name": "@lukc1024/s-expression",
-  "version": "2.0.2",
+  "name": "@lukuangchen/s-expression",
+  "version": "2.0.3",
   "description": "An S-expression parser",
   "type": "module",
   "main": "src/SExpression.bs.js",
@@ -9,7 +9,7 @@
     "rescript": "rescript build -w",
     "publish": "npm publish --access public"
   },
-  "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukc1024.github.io)",
+  "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukuangchen.github.io)",
   "license": "MIT",
   "dependencies": {
     "rescript": "^10.1.4"
@@ -20,12 +20,12 @@
   "devDependencies": {},
   "repository": {
     "type": "git",
-    "url": "git+https://github.com/LuKC1024/s-expression.git"
+    "url": "git+https://github.com/LuKuangChen/s-expression.git"
   },
   "bugs": {
-    "url": "https://github.com/LuKC1024/s-expression/issues"
+    "url": "https://github.com/LuKuangChen/s-expression/issues"
   },
-  "homepage": "https://github.com/LuKC1024/s-expression#readme",
+  "homepage": "https://github.com/LuKuangChen/s-expression#readme",
   "keywords": [
     "S-expression"
   ]

@@ -4,11 +4,11 @@ An S-expression parser written in ReScript.
 
 ## Supported Features
 
-- strings
-- symbols
-- lists in `( )`
-- lists in `[ ]`
-- vectors
+- Strings
+- Symbols
+- Lists in `( )`
+- Lists in `[ ]`
+- Vectors
 
 ## Not supported feature
 
@@ -20,5 +20,5 @@ An S-expression parser written in ReScript.
 ## Installation
 
 ```
-npm i @lukc1024/s-expression
+npm i @lukuangchen/s-expression
 ```
