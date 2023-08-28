@@ -24,5 +24,6 @@ module Error: {
     | MismatchedBracket(bracket, bracket)
   let toString: t => string
 }
+type exn += ParseError(Error.t)
 let fromStringBeginning: string => (annotated<t>, int)
 let fromString: string => Belt.List.t<annotated<t>>

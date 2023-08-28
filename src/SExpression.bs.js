@@ -476,6 +476,7 @@ export {
   Bracket ,
   toString$2 as toString,
   $$Error ,
+  ParseError ,
   fromStringBeginning ,
   fromString ,
 }
