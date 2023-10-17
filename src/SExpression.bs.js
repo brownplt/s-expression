@@ -214,14 +214,13 @@ function parseOne(_src) {
             var src$1 = match[1];
             var match$1 = caseSource(src$1);
             if (match$1 !== undefined) {
-              var chr$1 = match$1[0];
-              switch (chr$1) {
+              switch (match$1[0]) {
                 case "(" :
                     return startParseList(/* Vector */1, /* Round */0, start, match$1[1]);
                 case "[" :
                     return startParseList(/* Vector */1, /* Square */1, start, match$1[1]);
                 default:
-                  return parseSymbol(start, chr$1, src$1);
+                  return parseSymbol(start, "#", src$1);
               }
             } else {
               throw {
