@@ -213,7 +213,7 @@ let rec parseOne = (src: source): (annotated<t>, source) => {
     | None => raise(EOF)
     | Some(("(", src)) => startParseList(Vector, Bracket.Round, start, src)
     | Some(("[", src)) => startParseList(Vector, Square, start, src)
-    | Some((chr, _src)) => raise(ParseError(WantOpenBracketFound(chr)))
+    | Some((chr, _src)) => parseSymbol(start, chr, src)
     }
   | Some(("(", src)) => startParseList(List, Round, start, src)
   | Some(("[", src)) => startParseList(List, Square, start, src)

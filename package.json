@@ -1,6 +1,6 @@
 {
   "name": "@lukuangchen/s-expression",
-  "version": "2.0.4",
+  "version": "2.0.5",
   "description": "An S-expression parser",
   "type": "module",
   "main": "src/SExpression.bs.js",

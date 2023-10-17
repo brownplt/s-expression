@@ -148,6 +148,56 @@ var $$Error = {
 
 var ParseError = /* @__PURE__ */Caml_exceptions.create("SExpression.ParseError");
 
+function parseSymbol(start, firstCh, src) {
+  var _cs = {
+    hd: firstCh,
+    tl: /* [] */0
+  };
+  var _src = src;
+  while(true) {
+    var src$1 = _src;
+    var cs = _cs;
+    var end = (function(cs,src$1){
+    return function end(param) {
+      var e = {
+        TAG: /* Atom */0,
+        _0: {
+          TAG: /* Sym */1,
+          _0: $$String.concat("", Belt_List.reverse(cs))
+        }
+      };
+      return [
+              annotate(e, start, src$1.srcloc),
+              src$1
+            ];
+    }
+    }(cs,src$1));
+    var match = caseSource(src$1);
+    if (match === undefined) {
+      return end(undefined);
+    }
+    var chr = match[0];
+    switch (chr) {
+      case "(" :
+      case ")" :
+      case "[" :
+      case "\"" :
+      case "]" :
+          return end(undefined);
+      default:
+        if (/\s+/ig.test(chr)) {
+          return end(undefined);
+        }
+        _src = match[1];
+        _cs = {
+          hd: chr,
+          tl: cs
+        };
+        continue ;
+    }
+  };
+}
+
 var EOF = /* @__PURE__ */Caml_exceptions.create("SExpression.EOF");
 
 var WantSExprFoundRP = /* @__PURE__ */Caml_exceptions.create("SExpression.WantSExprFoundRP");
@@ -161,7 +211,8 @@ function parseOne(_src) {
       var chr = match[0];
       switch (chr) {
         case "#" :
-            var match$1 = caseSource(match[1]);
+            var src$1 = match[1];
+            var match$1 = caseSource(src$1);
             if (match$1 !== undefined) {
               var chr$1 = match$1[0];
               switch (chr$1) {
@@ -170,14 +221,7 @@ function parseOne(_src) {
                 case "[" :
                     return startParseList(/* Vector */1, /* Square */1, start, match$1[1]);
                 default:
-                  throw {
-                        RE_EXN_ID: ParseError,
-                        _1: {
-                          TAG: /* WantOpenBracketFound */0,
-                          _0: chr$1
-                        },
-                        Error: new Error()
-                      };
+                  return parseSymbol(start, chr$1, src$1);
               }
             } else {
               throw {
@@ -187,7 +231,7 @@ function parseOne(_src) {
             }
         case "'" :
             var match$2 = parseOne(match[1]);
-            var src$1 = match$2[1];
+            var src$2 = match$2[1];
             return [
                     annotate({
                           TAG: /* Sequence */1,
@@ -200,14 +244,14 @@ function parseOne(_src) {
                                     TAG: /* Sym */1,
                                     _0: "quote"
                                   }
-                                }, start, src$1.srcloc),
+                                }, start, src$2.srcloc),
                             tl: {
                               hd: match$2[0],
                               tl: /* [] */0
                             }
                           }
-                        }, start, src$1.srcloc),
-                    src$1
+                        }, start, src$2.srcloc),
+                    src$2
                   ];
         case "(" :
             return startParseList(/* List */0, /* Round */0, start, match[1]);
@@ -221,7 +265,7 @@ function parseOne(_src) {
         case "[" :
             return startParseList(/* List */0, /* Square */1, start, match[1]);
         case "\"" :
-            var src$2 = match[1];
+            var src$3 = match[1];
             var loop = (function(start){
             return function loop(_cs, _src) {
               while(true) {
@@ -310,7 +354,7 @@ function parseOne(_src) {
               };
             }
             }(start));
-            return loop(/* [] */0, src$2);
+            return loop(/* [] */0, src$3);
         case "]" :
             throw {
                   RE_EXN_ID: WantSExprFoundRP,
@@ -319,57 +363,11 @@ function parseOne(_src) {
                   Error: new Error()
                 };
         default:
-          var src$3 = match[1];
+          var src$4 = match[1];
           if (!/\s+/ig.test(chr)) {
-            var _cs = {
-              hd: chr,
-              tl: /* [] */0
-            };
-            var _src$1 = src$3;
-            while(true) {
-              var src$4 = _src$1;
-              var cs = _cs;
-              var end = (function(cs,src$4,start){
-              return function end(param) {
-                var e = {
-                  TAG: /* Atom */0,
-                  _0: {
-                    TAG: /* Sym */1,
-                    _0: $$String.concat("", Belt_List.reverse(cs))
-                  }
-                };
-                return [
-                        annotate(e, start, src$4.srcloc),
-                        src$4
-                      ];
-              }
-              }(cs,src$4,start));
-              var match$3 = caseSource(src$4);
-              if (match$3 === undefined) {
-                return end(undefined);
-              }
-              var chr$2 = match$3[0];
-              switch (chr$2) {
-                case "(" :
-                case ")" :
-                case "[" :
-                case "\"" :
-                case "]" :
-                    return end(undefined);
-                default:
-                  if (/\s+/ig.test(chr$2)) {
-                    return end(undefined);
-                  }
-                  _src$1 = match$3[1];
-                  _cs = {
-                    hd: chr$2,
-                    tl: cs
-                  };
-                  continue ;
-              }
-            };
+            return parseSymbol(start, chr, src$4);
           }
-          _src = src$3;
+          _src = src$4;
           continue ;
       }
     } else {
