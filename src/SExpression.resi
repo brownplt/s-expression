@@ -19,7 +19,6 @@ module Error: {
   type t =
     | WantListFoundEOF
     | WantStringFoundEOF
-    | WantOpenBracketFound(string)
     | WantEscapableCharFound(string)
     | MismatchedBracket(bracket, bracket)
   let toString: t => string

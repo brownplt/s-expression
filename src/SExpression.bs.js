@@ -126,19 +126,14 @@ function toString$3(err) {
     } else {
       return "Reached the end of the file while processing a string.";
     }
-  }
-  switch (err.TAG | 0) {
-    case /* WantOpenBracketFound */0 :
-        return "Found an unexpected string (" + err._0 + ") after \`#\`.";
-    case /* WantEscapableCharFound */1 :
-        return "Found an unexpected escape sequence (\\" + err._0 + ").";
-    case /* MismatchedBracket */2 :
-        return "Found a closing " + (
-                err._1 ? "square" : "round"
-              ) + " bracket but this list starts with a " + (
-                err._0 ? "square" : "round"
-              ) + " bracket.";
-    
+  } else if (err.TAG === /* WantEscapableCharFound */0) {
+    return "Found an unexpected escape sequence (\\" + err._0 + ").";
+  } else {
+    return "Found a closing " + (
+            err._1 ? "square" : "round"
+          ) + " bracket but this list starts with a " + (
+            err._0 ? "square" : "round"
+          ) + " bracket.";
   }
 }
 
@@ -324,7 +319,7 @@ function parseOne(_src) {
                           throw {
                                 RE_EXN_ID: ParseError,
                                 _1: {
-                                  TAG: /* WantEscapableCharFound */1,
+                                  TAG: /* WantEscapableCharFound */0,
                                   _0: chr$1
                                 },
                                 Error: new Error()
@@ -416,7 +411,7 @@ function startParseList(sequenceKind, bracket1, start, src) {
         throw {
               RE_EXN_ID: ParseError,
               _1: {
-                TAG: /* MismatchedBracket */2,
+                TAG: /* MismatchedBracket */1,
                 _0: bracket1,
                 _1: bracket2
               },

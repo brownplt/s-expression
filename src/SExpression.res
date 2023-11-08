@@ -110,14 +110,12 @@ module Error = {
   type t =
     | WantListFoundEOF
     | WantStringFoundEOF
-    | WantOpenBracketFound(string)
     | WantEscapableCharFound(string)
     | MismatchedBracket(bracket, bracket)
   let toString: t => string = err => {
     switch err {
     | WantListFoundEOF => "Reached the end of the file while processing a list."
     | WantStringFoundEOF => "Reached the end of the file while processing a string."
-    | WantOpenBracketFound(string) => `Found an unexpected string (${string}) after \`#\`.`
     | WantEscapableCharFound(string) => `Found an unexpected escape sequence (\\${string}).`
     | MismatchedBracket(start, end) =>
       `Found a closing ${Bracket.toString(
