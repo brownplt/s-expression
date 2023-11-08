@@ -27,6 +27,5 @@ module Error: {
   let toString: t => string
 }
 type exn += SExpressionError(Error.t)
-type exn += FoundNoSExpression
-let fromStringBeginning: string => (annotated<t>, int)
+let fromStringBeginning: string => option<(annotated<t>, int)>
 let fromString: string => Belt.List.t<annotated<t>>

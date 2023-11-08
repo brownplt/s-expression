@@ -257,9 +257,9 @@ exception FoundNoSExpression
 let fromStringBeginning = (src: string) => {
   switch parseOne(stringAsSource(src)) {
     | (term, src) => {
-      (term, src.i)
+      Some(term, src.i)
     }
-    | exception EOF => raise(FoundNoSExpression)
+    | exception EOF => None
     | exception FoundRP(bracket, src) => {
       raisePublicError(ExtraClosingBracket(bracket, src.srcloc))
     }

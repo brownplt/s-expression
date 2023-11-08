@@ -444,8 +444,6 @@ function startParseList(sequenceKind, bracket1, start, src) {
   };
 }
 
-var FoundNoSExpression = /* @__PURE__ */Caml_exceptions.create("SExpression.FoundNoSExpression");
-
 function fromStringBeginning(src) {
   var val;
   try {
@@ -454,10 +452,7 @@ function fromStringBeginning(src) {
   catch (raw_exn){
     var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
     if (exn.RE_EXN_ID === EOF) {
-      throw {
-            RE_EXN_ID: FoundNoSExpression,
-            Error: new Error()
-          };
+      return ;
     }
     if (exn.RE_EXN_ID === FoundRP) {
       throw {
@@ -522,7 +517,6 @@ export {
   toString$3 as toString,
   $$Error ,
   SExpressionError ,
-  FoundNoSExpression ,
   fromStringBeginning ,
   fromString ,
 }
