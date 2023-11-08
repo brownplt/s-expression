@@ -51,8 +51,13 @@ module Bracket = {
 }
 type bracket = Bracket.t
 
-type srcloc = {ln: int, ch: int}
-type srcrange = {begin: srcloc, end: srcloc}
+module SrcLoc = {
+  type t = {ln: int, ch: int}
+  let toString = ({ln, ch}) => `${ln + 1 |> Int.toString}:${ch + 1 |> Int.toString}`
+}
+open SrcLoc
+type srcrange = {begin: SrcLoc.t, end: SrcLoc.t}
+
 type annotated<'t> = {it: 't, ann: srcrange}
 
 type sequenceKind =
@@ -76,7 +81,7 @@ let rec toString = (e: annotated<t>) =>
     }
   }
 
-type source = {srcloc: srcloc, i: int, content: string}
+type source = {srcloc: SrcLoc.t, i: int, content: string}
 
 let annotate = (it, begin, end) => {
   {it, ann: {begin, end}}
@@ -86,7 +91,7 @@ let stringAsSource = s => {
   {srcloc: {ln: 0, ch: 0}, i: 0, content: s}
 }
 
-let advance = (srcloc, char) => {
+let advance = (srcloc: SrcLoc.t, char) => {
   let {ln, ch} = srcloc
   if char === "\n" {
     {ln: ln + 1, ch: 0}
@@ -112,19 +117,22 @@ module Error = {
     | WantStringFoundEOF
     | WantEscapableCharFound(string)
     | MismatchedBracket(bracket, bracket)
+    | ExtraClosingBracket(bracket, SrcLoc.t)
   let toString: t => string = err => {
     switch err {
-    | WantListFoundEOF => "Reached the end of the file while processing a list."
-    | WantStringFoundEOF => "Reached the end of the file while processing a string."
-    | WantEscapableCharFound(string) => `Found an unexpected escape sequence (\\${string}).`
+    | WantListFoundEOF => "reached the end of the file while processing a list."
+    | WantStringFoundEOF => "reached the end of the file while processing a string."
+    | WantEscapableCharFound(string) => `found an unexpected escape sequence (\\${string}).`
     | MismatchedBracket(start, end) =>
-      `Found a closing ${Bracket.toString(
+      `found a closing ${Bracket.toString(
           end,
-        )} bracket but this list starts with a ${Bracket.toString(start)} bracket.`
+        )} bracket while processing a list started with a ${Bracket.toString(start)} bracket.`
+    | ExtraClosingBracket(bracket, srcloc) => `found an extra closing ${Bracket.toString(bracket)} bracket at ${SrcLoc.toString(srcloc)}.`
     }
   }
 }
-exception ParseError(Error.t)
+exception SExpressionError(Error.t)
+let raisePublicError = x => raise(SExpressionError(x))
 
 let parseSymbol = (start, firstCh, src: source): (annotated<t>, source) => {
   let rec loop = (cs, src: source): (annotated<t>, source) => {
@@ -151,10 +159,10 @@ let parseSymbol = (start, firstCh, src: source): (annotated<t>, source) => {
   loop(list{firstCh}, src)
 }
 
-let parseString = (start: srcloc, src: source): (annotated<t>, source) => {
+let parseString = (start: SrcLoc.t, src: source): (annotated<t>, source) => {
   let rec loop = (cs, src): (annotated<t>, source) => {
     switch caseSource(src) {
-    | None => raise(ParseError(WantStringFoundEOF))
+    | None => raisePublicError(WantStringFoundEOF)
     | Some((`"`, src)) => {
         let e = Atom(Str(String.concat("", List.reverse(cs))))
         (annotate(e, start, src.srcloc), src)
@@ -170,7 +178,7 @@ let parseString = (start: srcloc, src: source): (annotated<t>, source) => {
   }
   and escaping = (cs, src): (annotated<t>, source) => {
     switch caseSource(src) {
-    | None => raise(ParseError(WantStringFoundEOF))
+    | None => raisePublicError(WantStringFoundEOF)
     | Some((chr, src)) =>
       switch chr {
       | `"` => loop(list{`"`, ...cs}, src)
@@ -181,7 +189,7 @@ let parseString = (start: srcloc, src: source): (annotated<t>, source) => {
         if chr == "\\" {
           loop(list{"\\", ...cs}, src)
         } else {
-          raise(ParseError(WantEscapableCharFound(chr)))
+          raisePublicError(WantEscapableCharFound(chr))
         }
       }
     }
@@ -189,8 +197,9 @@ let parseString = (start: srcloc, src: source): (annotated<t>, source) => {
   loop(list{}, src)
 }
 
+// internal exceptions
 exception EOF
-exception WantSExprFoundRP(bracket, source)
+exception FoundRP(bracket, source)
 let rec parseOne = (src: source): (annotated<t>, source) => {
   let start = src.srcloc
   switch caseSource(src) {
@@ -215,8 +224,8 @@ let rec parseOne = (src: source): (annotated<t>, source) => {
     }
   | Some(("(", src)) => startParseList(List, Round, start, src)
   | Some(("[", src)) => startParseList(List, Square, start, src)
-  | Some((")", src)) => raise(WantSExprFoundRP(Round, src))
-  | Some(("]", src)) => raise(WantSExprFoundRP(Square, src))
+  | Some((")", src)) => raise(FoundRP(Round, src))
+  | Some(("]", src)) => raise(FoundRP(Square, src))
   | Some((`"`, src)) => parseString(start, src)
   | Some((chr, src)) =>
     // Js.log(`This one character is: "${chr}".`)
@@ -231,22 +240,30 @@ and startParseList = (sequenceKind, bracket1, start, src): (annotated<t>, source
   let rec parseList = (elms, src): (annotated<t>, source) => {
     switch parseOne(src) {
     | (elm, src) => parseList(list{elm, ...elms}, src)
-    | exception EOF => raise(ParseError(WantListFoundEOF))
-    | exception WantSExprFoundRP(bracket2, src) =>
+    | exception EOF => raisePublicError(WantListFoundEOF)
+    | exception FoundRP(bracket2, src) =>
       if bracket1 == bracket2 {
         let e = Sequence(sequenceKind, bracket1, List.reverse(elms))
         (annotate(e, start, src.srcloc), src)
       } else {
-        raise(ParseError(MismatchedBracket(bracket1, bracket2)))
+        raisePublicError(MismatchedBracket(bracket1, bracket2))
       }
     }
   }
   parseList(list{}, src)
 }
 
+exception FoundNoSExpression
 let fromStringBeginning = (src: string) => {
-  let (term, src) = parseOne(stringAsSource(src))
-  (term, src.i)
+  switch parseOne(stringAsSource(src)) {
+    | (term, src) => {
+      (term, src.i)
+    }
+    | exception EOF => raise(FoundNoSExpression)
+    | exception FoundRP(bracket, src) => {
+      raisePublicError(ExtraClosingBracket(bracket, src.srcloc))
+    }
+  }
 }
 
 let fromString = (src: string) => {
@@ -254,6 +271,9 @@ let fromString = (src: string) => {
     switch parseOne(src) {
     | (elm, src) => loop(list{elm, ...elms}, src)
     | exception EOF => List.reverse(elms)
+    | exception FoundRP(bracket, src) => {
+      raisePublicError(ExtraClosingBracket(bracket, src.srcloc))
+    }
     }
   }
   loop(list{}, stringAsSource(src))

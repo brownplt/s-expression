@@ -8,21 +8,25 @@ module Bracket: {
   let toString: t => string
   let toWrapper: t => (string, string)
 }
-type bracket = Bracket.t
-type srcloc = {ln: int, ch: int}
-type srcrange = {begin: srcloc, end: srcloc}
+module SrcLoc: {
+  type t = {ln: int, ch: int}
+  let toString: t => string
+}
+type srcrange = {begin: SrcLoc.t, end: SrcLoc.t}
 type annotated<'t> = {it: 't, ann: srcrange}
 type sequenceKind = List | Vector
-type rec t = Atom(atom) | Sequence(sequenceKind, bracket, list<annotated<t>>)
+type rec t = Atom(atom) | Sequence(sequenceKind, Bracket.t, list<annotated<t>>)
 let toString: annotated<t> => string
 module Error: {
   type t =
     | WantListFoundEOF
     | WantStringFoundEOF
     | WantEscapableCharFound(string)
-    | MismatchedBracket(bracket, bracket)
+    | MismatchedBracket(Bracket.t, Bracket.t)
+    | ExtraClosingBracket(Bracket.t, SrcLoc.t)
   let toString: t => string
 }
-type exn += ParseError(Error.t)
+type exn += SExpressionError(Error.t)
+type exn += FoundNoSExpression
 let fromStringBeginning: string => (annotated<t>, int)
 let fromString: string => Belt.List.t<annotated<t>>

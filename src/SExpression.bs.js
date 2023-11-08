@@ -52,17 +52,25 @@ var Bracket = {
   toWrapper: toWrapper
 };
 
-function toString$2(e) {
+function toString$2(param) {
+  return "" + String(param.ln + 1 | 0) + ":" + String(param.ch + 1 | 0) + "";
+}
+
+var SrcLoc = {
+  toString: toString$2
+};
+
+function toString$3(e) {
   var x = e.it;
   if (x.TAG === /* Atom */0) {
     return toString(x._0);
   }
   if (x._0) {
     var match = toWrapper(x._1);
-    return "#" + match[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$2)) + "" + match[1] + "";
+    return "#" + match[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$3)) + "" + match[1] + "";
   }
   var match$1 = toWrapper(x._1);
-  return "" + match$1[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$2)) + "" + match$1[1] + "";
+  return "" + match$1[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$3)) + "" + match$1[1] + "";
 }
 
 function annotate(it, begin, end) {
@@ -119,29 +127,36 @@ function caseSource(source) {
         ];
 }
 
-function toString$3(err) {
+function toString$4(err) {
   if (typeof err === "number") {
     if (err === /* WantListFoundEOF */0) {
-      return "Reached the end of the file while processing a list.";
+      return "reached the end of the file while processing a list.";
     } else {
-      return "Reached the end of the file while processing a string.";
+      return "reached the end of the file while processing a string.";
     }
-  } else if (err.TAG === /* WantEscapableCharFound */0) {
-    return "Found an unexpected escape sequence (\\" + err._0 + ").";
-  } else {
-    return "Found a closing " + (
-            err._1 ? "square" : "round"
-          ) + " bracket but this list starts with a " + (
-            err._0 ? "square" : "round"
-          ) + " bracket.";
+  }
+  switch (err.TAG | 0) {
+    case /* WantEscapableCharFound */0 :
+        return "found an unexpected escape sequence (\\" + err._0 + ").";
+    case /* MismatchedBracket */1 :
+        return "found a closing " + (
+                err._1 ? "square" : "round"
+              ) + " bracket while processing a list started with a " + (
+                err._0 ? "square" : "round"
+              ) + " bracket.";
+    case /* ExtraClosingBracket */2 :
+        return "found an extra closing " + (
+                err._0 ? "square" : "round"
+              ) + " bracket at " + toString$2(err._1) + ".";
+    
   }
 }
 
 var $$Error = {
-  toString: toString$3
+  toString: toString$4
 };
 
-var ParseError = /* @__PURE__ */Caml_exceptions.create("SExpression.ParseError");
+var SExpressionError = /* @__PURE__ */Caml_exceptions.create("SExpression.SExpressionError");
 
 function parseSymbol(start, firstCh, src) {
   var _cs = {
@@ -195,7 +210,7 @@ function parseSymbol(start, firstCh, src) {
 
 var EOF = /* @__PURE__ */Caml_exceptions.create("SExpression.EOF");
 
-var WantSExprFoundRP = /* @__PURE__ */Caml_exceptions.create("SExpression.WantSExprFoundRP");
+var FoundRP = /* @__PURE__ */Caml_exceptions.create("SExpression.FoundRP");
 
 function parseOne(_src) {
   while(true) {
@@ -251,7 +266,7 @@ function parseOne(_src) {
             return startParseList(/* List */0, /* Round */0, start, match[1]);
         case ")" :
             throw {
-                  RE_EXN_ID: WantSExprFoundRP,
+                  RE_EXN_ID: FoundRP,
                   _1: /* Round */0,
                   _2: match[1],
                   Error: new Error()
@@ -317,7 +332,7 @@ function parseOne(_src) {
                                       }, src$3);
                           }
                           throw {
-                                RE_EXN_ID: ParseError,
+                                RE_EXN_ID: SExpressionError,
                                 _1: {
                                   TAG: /* WantEscapableCharFound */0,
                                   _0: chr$1
@@ -327,7 +342,7 @@ function parseOne(_src) {
                       }
                     } else {
                       throw {
-                            RE_EXN_ID: ParseError,
+                            RE_EXN_ID: SExpressionError,
                             _1: /* WantStringFoundEOF */1,
                             Error: new Error()
                           };
@@ -341,7 +356,7 @@ function parseOne(_src) {
                   continue ;
                 }
                 throw {
-                      RE_EXN_ID: ParseError,
+                      RE_EXN_ID: SExpressionError,
                       _1: /* WantStringFoundEOF */1,
                       Error: new Error()
                     };
@@ -351,7 +366,7 @@ function parseOne(_src) {
             return loop(/* [] */0, src$3);
         case "]" :
             throw {
-                  RE_EXN_ID: WantSExprFoundRP,
+                  RE_EXN_ID: FoundRP,
                   _1: /* Square */1,
                   _2: match[1],
                   Error: new Error()
@@ -387,15 +402,15 @@ function startParseList(sequenceKind, bracket1, start, src) {
       var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
       if (exn.RE_EXN_ID === EOF) {
         throw {
-              RE_EXN_ID: ParseError,
+              RE_EXN_ID: SExpressionError,
               _1: /* WantListFoundEOF */0,
               Error: new Error()
             };
       }
-      if (exn.RE_EXN_ID === WantSExprFoundRP) {
+      if (exn.RE_EXN_ID === FoundRP) {
+        var src$2 = exn._2;
         var bracket2 = exn._1;
         if (bracket1 === bracket2) {
-          var src$2 = exn._2;
           var e_2 = Belt_List.reverse(elms);
           var e = {
             TAG: /* Sequence */1,
@@ -409,7 +424,7 @@ function startParseList(sequenceKind, bracket1, start, src) {
                 ];
         }
         throw {
-              RE_EXN_ID: ParseError,
+              RE_EXN_ID: SExpressionError,
               _1: {
                 TAG: /* MismatchedBracket */1,
                 _0: bracket1,
@@ -429,11 +444,37 @@ function startParseList(sequenceKind, bracket1, start, src) {
   };
 }
 
+var FoundNoSExpression = /* @__PURE__ */Caml_exceptions.create("SExpression.FoundNoSExpression");
+
 function fromStringBeginning(src) {
-  var match = parseOne(stringAsSource(src));
+  var val;
+  try {
+    val = parseOne(stringAsSource(src));
+  }
+  catch (raw_exn){
+    var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
+    if (exn.RE_EXN_ID === EOF) {
+      throw {
+            RE_EXN_ID: FoundNoSExpression,
+            Error: new Error()
+          };
+    }
+    if (exn.RE_EXN_ID === FoundRP) {
+      throw {
+            RE_EXN_ID: SExpressionError,
+            _1: {
+              TAG: /* ExtraClosingBracket */2,
+              _0: exn._1,
+              _1: exn._2.srcloc
+            },
+            Error: new Error()
+          };
+    }
+    throw exn;
+  }
   return [
-          match[0],
-          match[1].i
+          val[0],
+          val[1].i
         ];
 }
 
@@ -452,6 +493,17 @@ function fromString(src) {
       if (exn.RE_EXN_ID === EOF) {
         return Belt_List.reverse(elms);
       }
+      if (exn.RE_EXN_ID === FoundRP) {
+        throw {
+              RE_EXN_ID: SExpressionError,
+              _1: {
+                TAG: /* ExtraClosingBracket */2,
+                _0: exn._1,
+                _1: exn._2.srcloc
+              },
+              Error: new Error()
+            };
+      }
       throw exn;
     }
     _src = val[1];
@@ -466,9 +518,11 @@ function fromString(src) {
 export {
   Atom ,
   Bracket ,
-  toString$2 as toString,
+  SrcLoc ,
+  toString$3 as toString,
   $$Error ,
-  ParseError ,
+  SExpressionError ,
+  FoundNoSExpression ,
   fromStringBeginning ,
   fromString ,
 }
