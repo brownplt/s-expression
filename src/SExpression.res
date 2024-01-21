@@ -199,6 +199,15 @@ let parseString = (start: SrcLoc.t, src: source): (annotated<t>, source) => {
 
 // internal exceptions
 exception EOF
+
+let rec forwardToEOL = (src, then) => {
+  switch caseSource(src) {
+    | None => raise(EOF)
+    | Some((("\n"), src)) => then(src)
+    | Some((_, src)) => forwardToEOL(src, then)
+  }
+}
+
 exception FoundRP(bracket, source)
 let rec parseOne = (src: source): (annotated<t>, source) => {
   let start = src.srcloc
@@ -220,6 +229,10 @@ let rec parseOne = (src: source): (annotated<t>, source) => {
     | None => raise(EOF)
     | Some(("(", src)) => startParseList(Vector, Bracket.Round, start, src)
     | Some(("[", src)) => startParseList(Vector, Square, start, src)
+    | Some((";", src)) => {
+      let (_, src) = parseOne(src)
+      parseOne(src)
+    }
     | Some((_chr, _src)) => parseSymbol(start, "#", src)
     }
   | Some(("(", src)) => startParseList(List, Round, start, src)
@@ -227,6 +240,7 @@ let rec parseOne = (src: source): (annotated<t>, source) => {
   | Some((")", src)) => raise(FoundRP(Round, src))
   | Some(("]", src)) => raise(FoundRP(Square, src))
   | Some((`"`, src)) => parseString(start, src)
+  | Some((`;`, src)) => forwardToEOL(src, parseOne)
   | Some((chr, src)) =>
     // Js.log(`This one character is: "${chr}".`)
     if Js.Re.test_(%re("/\s+/ig"), chr) {
@@ -253,7 +267,6 @@ and startParseList = (sequenceKind, bracket1, start, src): (annotated<t>, source
   parseList(list{}, src)
 }
 
-exception FoundNoSExpression
 let fromStringBeginning = (src: string) => {
   switch parseOne(stringAsSource(src)) {
     | (term, src) => {

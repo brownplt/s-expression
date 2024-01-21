@@ -70,6 +70,10 @@ test_parse("\"\\t\"", "\"\t\"");
 
 test_parse("\"\\?\"", "Error: found an unexpected escape sequence (\\?).");
 
+test_parse("#;(ignore this s-expression) 2 3", "2 3");
+
+test_parse("\n;; ignroe this line\n2\n3\n", "2 3");
+
 export {
   test_parse ,
 }

@@ -2,6 +2,14 @@
 
 An S-expression parser written in ReScript.
 
+## Development
+
+`npm run dev` and then start editing the code.
+
+## Build
+
+`npm run build`
+
 ## Supported Features
 
 - Strings
@@ -9,13 +17,12 @@ An S-expression parser written in ReScript.
 - Lists in `( )`
 - Lists in `[ ]`
 - Vectors
+- line comments `;`
+- S-expression comments `#;`
 
 ## Not supported feature
 
-- all sorts of comments:
-  - line comments `; `
-  - block comments `#| |#`
-  - S-expression comments `#; `
+- range comments `#| |#`
 
 ## Installation
 
