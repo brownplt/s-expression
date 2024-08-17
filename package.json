@@ -1,13 +1,12 @@
 {
   "name": "@lukuangchen/s-expression",
-  "version": "2.1.2",
+  "version": "3.0.0",
   "description": "A parser for S-expressions",
   "type": "module",
   "main": "src/SExpression.bs.js",
   "scripts": {
     "test": "node test/Main.bs.js",
-    "dev": "npx rescript build -w",
-    "publish": "npm publish --access public"
+    "dev": "npx rescript build -w"
   },
   "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukuangchen.github.io)",
   "license": "MIT",
@@ -27,6 +26,6 @@
   },
   "homepage": "https://github.com/LuKuangChen/s-expression#readme",
   "keywords": [
-    "S-expression"
+    "S-expression", "rescript"
   ]
 }

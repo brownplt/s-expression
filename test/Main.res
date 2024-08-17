@@ -3,8 +3,8 @@ open Belt
 
 let test_parse = (str, wanted_result) => {
   let result = {
-    switch fromString(str) {
-    | elms => String.concat(" ", elms->List.map(toString))
+    switch SExpr.fromString(str) {
+    | elms => String.concat(" ", elms->List.map(SExpr.toString))
     | exception SExpressionError(err) => `Error: ${Error.toString(err)}`
     }
   }

@@ -57,21 +57,72 @@ function toString$2(param) {
   return "" + String(param.ln + 1 | 0) + ":" + String(param.ch + 1 | 0) + "";
 }
 
-var SrcLoc = {
+var SourcePoint = {
   toString: toString$2
 };
 
-function toString$3(e) {
+function toString$3(param) {
+  return "" + toString$2(param.begin) + "-" + toString$2(param.end) + "";
+}
+
+var SourceLocation = {
+  toString: toString$3
+};
+
+function toString$4(t) {
+  if (t) {
+    return "vector";
+  } else {
+    return "list";
+  }
+}
+
+var SequenceKind = {
+  toString: toString$4
+};
+
+function toString$5(err) {
+  if (typeof err === "number") {
+    if (err === /* WantListFoundEOF */0) {
+      return "reached the end of the file while processing a list.";
+    } else {
+      return "reached the end of the file while processing a string.";
+    }
+  }
+  switch (err.TAG | 0) {
+    case /* WantEscapableCharFound */0 :
+        return "found an unexpected escape sequence (\\" + err._0 + ").";
+    case /* MismatchedBracket */1 :
+        return "found a closing " + (
+                err._1 ? "square" : "round"
+              ) + " bracket while processing a list started with a " + (
+                err._0 ? "square" : "round"
+              ) + " bracket.";
+    case /* ExtraClosingBracket */2 :
+        return "found an extra closing " + (
+                err._0 ? "square" : "round"
+              ) + " bracket at " + toString$2(err._1) + ".";
+    
+  }
+}
+
+var $$Error = {
+  toString: toString$5
+};
+
+var SExpressionError = /* @__PURE__ */Caml_exceptions.create("SExpression.SExpressionError");
+
+function toString$6(e) {
   var x = e.it;
   if (x.TAG === /* Atom */0) {
     return toString(x._0);
   }
   if (x._0) {
     var match = toWrapper(x._1);
-    return "#" + match[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$3)) + "" + match[1] + "";
+    return "#" + match[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$6)) + "" + match[1] + "";
   }
   var match$1 = toWrapper(x._1);
-  return "" + match$1[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$3)) + "" + match$1[1] + "";
+  return "" + match$1[0] + "" + $$String.concat(" ", Belt_List.map(x._2, toString$6)) + "" + match$1[1] + "";
 }
 
 function annotate(it, begin, end) {
@@ -128,37 +179,6 @@ function caseSource(source) {
         ];
 }
 
-function toString$4(err) {
-  if (typeof err === "number") {
-    if (err === /* WantListFoundEOF */0) {
-      return "reached the end of the file while processing a list.";
-    } else {
-      return "reached the end of the file while processing a string.";
-    }
-  }
-  switch (err.TAG | 0) {
-    case /* WantEscapableCharFound */0 :
-        return "found an unexpected escape sequence (\\" + err._0 + ").";
-    case /* MismatchedBracket */1 :
-        return "found a closing " + (
-                err._1 ? "square" : "round"
-              ) + " bracket while processing a list started with a " + (
-                err._0 ? "square" : "round"
-              ) + " bracket.";
-    case /* ExtraClosingBracket */2 :
-        return "found an extra closing " + (
-                err._0 ? "square" : "round"
-              ) + " bracket at " + toString$2(err._1) + ".";
-    
-  }
-}
-
-var $$Error = {
-  toString: toString$4
-};
-
-var SExpressionError = /* @__PURE__ */Caml_exceptions.create("SExpression.SExpressionError");
-
 function parseSymbol(start, firstCh, src) {
   var _cs = {
     hd: firstCh,
@@ -209,9 +229,9 @@ function parseSymbol(start, firstCh, src) {
   };
 }
 
-var EOF = /* @__PURE__ */Caml_exceptions.create("SExpression.EOF");
+var EOF = /* @__PURE__ */Caml_exceptions.create("SExpression.SExpr.EOF");
 
-var FoundRP = /* @__PURE__ */Caml_exceptions.create("SExpression.FoundRP");
+var FoundRP = /* @__PURE__ */Caml_exceptions.create("SExpression.SExpr.FoundRP");
 
 function parseOne(_src) {
   while(true) {
@@ -532,14 +552,20 @@ function fromString(src) {
   };
 }
 
+var SExpr = {
+  toString: toString$6,
+  fromStringBeginning: fromStringBeginning,
+  fromString: fromString
+};
+
 export {
   Atom ,
   Bracket ,
-  SrcLoc ,
-  toString$3 as toString,
+  SourcePoint ,
+  SourceLocation ,
+  SequenceKind ,
   $$Error ,
   SExpressionError ,
-  fromStringBeginning ,
-  fromString ,
+  SExpr ,
 }
 /* No side effect */

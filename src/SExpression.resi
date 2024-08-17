@@ -1,31 +1,55 @@
+type atom = Str(string) | Sym(string)
+type bracket = Round | Square
+type sourcePoint = {ln: int, ch: int}
+type sourceLocation = {begin: sourcePoint, end: sourcePoint}
+type sequenceKind = List | Vector
+type error =
+  | WantListFoundEOF
+  | WantStringFoundEOF
+  | WantEscapableCharFound(string)
+  | MismatchedBracket(bracket, bracket)
+  | ExtraClosingBracket(bracket, sourcePoint)
+type annotated<'it, 'ann> = {it: 'it, ann: 'ann}
+type rec sexpr = annotated<sexprNode, sourceLocation>
+and sexprNode = Atom(atom) | Sequence(sequenceKind, bracket, list<sexpr>)
+
 module Atom: {
-  type t = Str(string) | Sym(string)
+  type t = atom
   let toString: t => string
 }
-type atom = Atom.t
+
 module Bracket: {
-  type t = Round | Square
+  type t = bracket
   let toString: t => string
   let toWrapper: t => (string, string)
 }
-module SrcLoc: {
-  type t = {ln: int, ch: int}
+
+// a point in the source file
+module SourcePoint: {
+  type t = sourcePoint
   let toString: t => string
 }
-type srcrange = {begin: SrcLoc.t, end: SrcLoc.t}
-type annotated<'t> = {it: 't, ann: srcrange}
-type sequenceKind = List | Vector
-type rec t = Atom(atom) | Sequence(sequenceKind, Bracket.t, list<annotated<t>>)
-let toString: annotated<t> => string
+
+// a location in the source file
+module SourceLocation: {
+  type t = sourceLocation
+  let toString: t => string
+}
+
+module SequenceKind: {
+  type t = sequenceKind
+  let toString: t => string
+}
+
 module Error: {
-  type t =
-    | WantListFoundEOF
-    | WantStringFoundEOF
-    | WantEscapableCharFound(string)
-    | MismatchedBracket(Bracket.t, Bracket.t)
-    | ExtraClosingBracket(Bracket.t, SrcLoc.t)
+  type t = error
   let toString: t => string
 }
-type exn += SExpressionError(Error.t)
-let fromStringBeginning: string => option<(annotated<t>, int)>
-let fromString: string => Belt.List.t<annotated<t>>
+type exn += SExpressionError(error)
+
+module SExpr: {
+  type rec t = sexpr
+  let toString: t => string
+  let fromStringBeginning: string => option<(t, int)>
+  let fromString: string => list<t>
+}

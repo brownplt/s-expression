@@ -8,7 +8,9 @@ An S-expression parser written in ReScript.
 
 ## Build
 
-`npm run build`
+```sh
+npm run build
+```
 
 ## Supported Features
 
@@ -26,6 +28,6 @@ An S-expression parser written in ReScript.
 
 ## Installation
 
-```
-npm i @lukuangchen/s-expression
+```sh
+npm install git+https://github.com/brownplt/s-expression.git
 ```

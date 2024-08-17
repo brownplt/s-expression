@@ -10,7 +10,7 @@ function test_parse(str, wanted_result) {
   var exit = 0;
   var elms;
   try {
-    elms = SExpression.fromString(str);
+    elms = SExpression.SExpr.fromString(str);
     exit = 1;
   }
   catch (raw_err){
@@ -22,7 +22,7 @@ function test_parse(str, wanted_result) {
     }
   }
   if (exit === 1) {
-    result = $$String.concat(" ", Belt_List.map(elms, SExpression.toString));
+    result = $$String.concat(" ", Belt_List.map(elms, SExpression.SExpr.toString));
   }
   if (result !== wanted_result) {
     console.log("Test failed:");
