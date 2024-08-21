@@ -16,7 +16,7 @@ function test_parse(str, wanted_result) {
   catch (raw_err){
     var err = Caml_js_exceptions.internalToOCamlException(raw_err);
     if (err.RE_EXN_ID === SExpression.SExpressionError) {
-      result = "Error: " + SExpression.$$Error.toString(err._1) + "";
+      result = "Error: " + SExpression.$$Error.toString(err._1);
     } else {
       throw err;
     }
@@ -27,11 +27,11 @@ function test_parse(str, wanted_result) {
   if (result !== wanted_result) {
     console.log("Test failed:");
     console.log("  Input:");
-    console.log("     " + str + "");
+    console.log("     " + str);
     console.log("  Wanted result:");
-    console.log("     " + wanted_result + "");
+    console.log("     " + wanted_result);
     console.log("  Actual result:");
-    console.log("     " + result + "");
+    console.log("     " + result);
     console.log("----------------");
     return ;
   }

@@ -52,7 +52,7 @@ module Bracket = {
 
 module SourcePoint = {
   type t = sourcePoint
-  let toString = ({ln, ch}) => `${ln + 1 |> Int.toString}:${ch + 1 |> Int.toString}`
+  let toString = ({ln, ch}) => `${ln + 1 |> Int.toString}:${ch |> Int.toString}`
 }
 
 module SourceLocation = {
