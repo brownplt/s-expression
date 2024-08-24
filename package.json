@@ -5,7 +5,7 @@
   "type": "module",
   "main": "src/SExpression.bs.js",
   "scripts": {
-    "test": "node test/Main.bs.js",
+    "test": "node test/Main.mjs",
     "dev": "npx rescript build -w"
   },
   "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukuangchen.github.io)",

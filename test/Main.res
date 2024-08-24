@@ -3,7 +3,7 @@ open! SExpression
 let test_parse = (str, wanted_result) => {
   let result = {
     switch SExpr.fromString(str) {
-    | elms => String.concatMany(" ", elms->List.map(SExpr.toString)->List.toArray)
+    | elms => Array.join(elms->List.map(SExpr.toString)->List.toArray, " ")
     | exception SExpressionError(err) => `Error: ${Error.toString(err)}`
     }
   }

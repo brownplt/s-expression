@@ -16,7 +16,7 @@
             "in-source": true
         }
     ],
-    "suffix": ".bs.js",
+    "suffix": ".mjs",
     "bs-dependencies": [
         "@rescript/core"
     ],

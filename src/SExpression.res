@@ -102,7 +102,7 @@ module SExpr = {
         | Vector => "#"
         }
         let (a, z) = Bracket.toWrapper(bracket)
-        `${sequenceKind}${a}${String.concatMany(" ", content->List.map(toString)->List.toArray)}${z}`
+        `${sequenceKind}${a}${Array.join(content->List.map(toString)->List.toArray, " ")}${z}`
       }
     }
 
