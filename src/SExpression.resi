@@ -11,7 +11,7 @@ type error =
   | ExtraClosingBracket(bracket, sourcePoint)
 type annotated<'it, 'ann> = {it: 'it, ann: 'ann}
 type rec sexpr = annotated<sexprNode, sourceLocation>
-and sexprNode = Atom(atom) | Sequence(sequenceKind, bracket, list<sexpr>)
+and sexprNode = Atom(atom) | Sequence({sequenceKind, bracket, content: list<sexpr>})
 
 module Atom: {
   type t = atom

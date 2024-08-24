@@ -110,12 +110,10 @@ function toString$6(e) {
   if (x.TAG === "Atom") {
     return toString(x._0);
   }
-  if (x._0 === "List") {
-    var match = toWrapper(x._1);
-    return match[0] + $$String.concat(" ", Belt_List.map(x._2, toString$6)) + match[1];
-  }
-  var match$1 = toWrapper(x._1);
-  return "#" + match$1[0] + $$String.concat(" ", Belt_List.map(x._2, toString$6)) + match$1[1];
+  var sequenceKind;
+  sequenceKind = x.sequenceKind === "List" ? "" : "#";
+  var match = toWrapper(x.bracket);
+  return sequenceKind + match[0] + $$String.concat(" ", Belt_List.map(x.content, toString$6)) + match[1];
 }
 
 function annotate(it, begin, end) {
@@ -262,9 +260,9 @@ function parseOne(_src) {
             return [
                     annotate({
                           TAG: "Sequence",
-                          _0: "List",
-                          _1: "Round",
-                          _2: {
+                          sequenceKind: "List",
+                          bracket: "Round",
+                          content: {
                             hd: annotate({
                                   TAG: "Atom",
                                   _0: {
@@ -449,9 +447,9 @@ function startParseList(sequenceKind, bracket1, start, src) {
           var e_2 = Belt_List.reverse(elms);
           var e = {
             TAG: "Sequence",
-            _0: sequenceKind,
-            _1: bracket1,
-            _2: e_2
+            sequenceKind: sequenceKind,
+            bracket: bracket1,
+            content: e_2
           };
           return [
                   annotate(e, start, src$2.srcloc),

@@ -50,9 +50,9 @@ test_parse("()", "()");
 
 test_parse("[]", "[]");
 
-test_parse(")", "Error: found an extra closing round bracket at 1:2.");
+test_parse(")", "Error: found an extra closing round bracket at 1:1.");
 
-test_parse("]", "Error: found an extra closing square bracket at 1:2.");
+test_parse("]", "Error: found an extra closing square bracket at 1:1.");
 
 test_parse("#t", "#t");
 

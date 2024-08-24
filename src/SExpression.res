@@ -13,7 +13,8 @@ type error =
   | ExtraClosingBracket(bracket, sourcePoint)
 type annotated<'it, 'ann> = {it: 'it, ann: 'ann}
 type rec sexpr = annotated<sexprNode, sourceLocation>
-and sexprNode = Atom(atom) | Sequence(sequenceKind, bracket, list<sexpr>)
+and sexprNode =
+  Atom(atom) | Sequence({sequenceKind: sequenceKind, bracket: bracket, content: list<sexpr>})
 
 module Atom = {
   type t = atom
@@ -52,13 +53,13 @@ module Bracket = {
 
 module SourcePoint = {
   type t = sourcePoint
-  let toString = ({ln, ch}) => `${ln + 1 |> Int.toString}:${ch |> Int.toString}`
+  let toString = ({ln, ch}) => `${Int.toString(ln + 1)}:${Int.toString(ch)}`
 }
 
 module SourceLocation = {
   type t = sourceLocation
   let toString = ({begin, end}) => {
-    `${begin |> SourcePoint.toString}-${end |> SourcePoint.toString}`
+    `${SourcePoint.toString(begin)}-${SourcePoint.toString(end)}`
   }
 }
 
@@ -97,13 +98,13 @@ module SExpr = {
   let rec toString = (e: sexpr): string =>
     switch e.it {
     | Atom(x) => Atom.toString(x)
-    | Sequence(Vector, b, xs) => {
-        let (a, z) = Bracket.toWrapper(b)
-        `#${a}${String.concat(" ", xs->List.map(toString))}${z}`
-      }
-    | Sequence(List, b, xs) => {
-        let (a, z) = Bracket.toWrapper(b)
-        `${a}${String.concat(" ", xs->List.map(toString))}${z}`
+    | Sequence({sequenceKind, bracket, content}) => {
+        let sequenceKind = switch sequenceKind {
+        | List => ""
+        | Vector => "#"
+        }
+        let (a, z) = Bracket.toWrapper(bracket)
+        `${sequenceKind}${a}${String.concat(" ", content->List.map(toString))}${z}`
       }
     }
 
@@ -222,7 +223,11 @@ module SExpr = {
         let (e, src) = parseOne(src)
         (
           annotate(
-            Sequence(List, Round, list{annotate(Atom(Sym("quote")), start, src.srcloc), e}),
+            Sequence({
+              sequenceKind: List,
+              bracket: Round,
+              content: list{annotate(Atom(Sym("quote")), start, src.srcloc), e},
+            }),
             start,
             src.srcloc,
           ),
@@ -255,17 +260,15 @@ module SExpr = {
       }
     }
   }
-  and startParseList = (sequenceKind, bracket1, start, src): (
-    t,
-    source,
-  ) => {
+  and startParseList = (sequenceKind, bracket1, start, src): (t, source) => {
     let rec parseList = (elms, src): (t, source) => {
       switch parseOne(src) {
       | (elm, src) => parseList(list{elm, ...elms}, src)
       | exception EOF => raiseError(WantListFoundEOF)
       | exception FoundRP(bracket2, src) =>
         if bracket1 == bracket2 {
-          let e = Sequence(sequenceKind, bracket1, List.reverse(elms))
+          let bracket = bracket1
+          let e = Sequence({sequenceKind, bracket, content: List.reverse(elms)})
           (annotate(e, start, src.srcloc), src)
         } else {
           raiseError(MismatchedBracket(bracket1, bracket2))

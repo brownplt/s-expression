@@ -1,6 +1,6 @@
 {
   "name": "@brownplt/s-expression",
-  "version": "3.0.0",
+  "version": "4.0.0",
   "description": "A parser for S-expressions",
   "type": "module",
   "main": "src/SExpression.bs.js",
@@ -11,12 +11,11 @@
   "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukuangchen.github.io)",
   "license": "MIT",
   "dependencies": {
-    "rescript": "^10.1.4"
+    "rescript": "^11.1.3"
   },
   "directories": {
     "lib": "lib"
   },
-  "devDependencies": {},
   "repository": {
     "type": "git",
     "url": "git+https://github.com/LuKuangChen/s-expression.git"
@@ -26,6 +25,7 @@
   },
   "homepage": "https://github.com/LuKuangChen/s-expression#readme",
   "keywords": [
-    "S-expression", "rescript"
+    "S-expression",
+    "rescript"
   ]
 }
