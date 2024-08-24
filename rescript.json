@@ -17,10 +17,15 @@
         }
     ],
     "suffix": ".bs.js",
-    "bs-dependencies": [],
+    "bs-dependencies": [
+        "@rescript/core"
+    ],
     "gentypeconfig": {
         "module": "esmodule",
         "moduleResolution": "node",
         "generatedFileExtension": ".gen.tsx"
-    }
+    },
+    "bsc-flags": [
+        "-open RescriptCore"
+    ]
 }

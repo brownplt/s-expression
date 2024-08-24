@@ -1,5 +1,3 @@
-open Belt
-
 type atom = Str(string) | Sym(string)
 type bracket = Round | Square
 type sourcePoint = {ln: int, ch: int}
@@ -104,7 +102,7 @@ module SExpr = {
         | Vector => "#"
         }
         let (a, z) = Bracket.toWrapper(bracket)
-        `${sequenceKind}${a}${String.concat(" ", content->List.map(toString))}${z}`
+        `${sequenceKind}${a}${String.concatMany(" ", content->List.map(toString)->List.toArray)}${z}`
       }
     }
 
@@ -143,7 +141,7 @@ module SExpr = {
   let parseSymbol = (start, firstCh, src: source): (sexpr, source) => {
     let rec loop = (cs, src: source): (sexpr, source) => {
       let end = () => {
-        let e = Atom(Sym(String.concat("", List.reverse(cs))))
+        let e = Atom(Sym(String.concatMany("", List.reverse(cs) |> List.toArray)))
         (annotate(e, start, src.srcloc), src)
       }
       switch caseSource(src) {
@@ -170,7 +168,7 @@ module SExpr = {
       switch caseSource(src) {
       | None => raiseError(WantStringFoundEOF)
       | Some((`"`, src)) => {
-          let e = Atom(Str(String.concat("", List.reverse(cs))))
+          let e = Atom(Str(String.concatMany("", List.reverse(cs) |> List.toArray)))
           (annotate(e, start, src.srcloc), src)
         }
 

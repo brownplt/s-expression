@@ -1,10 +1,9 @@
-open SExpression
-open Belt
+open! SExpression
 
 let test_parse = (str, wanted_result) => {
   let result = {
     switch SExpr.fromString(str) {
-    | elms => String.concat(" ", elms->List.map(SExpr.toString))
+    | elms => String.concatMany(" ", elms->List.map(SExpr.toString)->List.toArray)
     | exception SExpressionError(err) => `Error: ${Error.toString(err)}`
     }
   }

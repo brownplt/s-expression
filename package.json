@@ -11,6 +11,7 @@
   "author": "Kuang-Chen Lu <kuang-chen_lu@brown.edu> (https://lukuangchen.github.io)",
   "license": "MIT",
   "dependencies": {
+    "@rescript/core": "^1.5.2",
     "rescript": "^11.1.3"
   },
   "directories": {
