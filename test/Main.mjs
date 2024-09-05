@@ -9,7 +9,7 @@ function test_parse(str, wanted_result) {
   var exit = 0;
   var elms;
   try {
-    elms = SExpression.SExpr.fromString(str);
+    elms = SExpression.SExpr.fromString(undefined, str);
     exit = 1;
   }
   catch (raw_err){
