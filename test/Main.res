@@ -1,8 +1,8 @@
 open! SExpression
 
-let test_parse = (str, wanted_result) => {
+let test_parse = (~ignoreLangLine=false, str, wanted_result) => {
   let result = {
-    switch SExpr.fromString(str) {
+    switch SExpr.fromString(~ignoreLangLine, str) {
     | elms => Array.join(elms->List.map(SExpr.toString)->List.toArray, " ")
     | exception SExpressionError(err) => `Error: ${Error.toString(err)}`
     }
@@ -45,6 +45,17 @@ test_parse("\"\\?\"", "Error: found an unexpected escape sequence (\\?).")
 test_parse("#;(ignore this s-expression) 2 3", "2 3")
 test_parse(`
 ;; ignroe this line
+2
+3
+`, "2 3")
+// test #lang
+test_parse(~ignoreLangLine=true, "#lang\n2 3", "2 3")
+test_parse(~ignoreLangLine=true, `
+
+
+
+#lang foo
+
 2
 3
 `, "2 3")

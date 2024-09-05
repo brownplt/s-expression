@@ -2,6 +2,8 @@
 
 import * as Js_string from "rescript/lib/es6/js_string.js";
 import * as Core__List from "@rescript/core/src/Core__List.mjs";
+import * as Core__Array from "@rescript/core/src/Core__Array.mjs";
+import * as Core__Option from "@rescript/core/src/Core__Option.mjs";
 import * as Caml_exceptions from "rescript/lib/es6/caml_exceptions.js";
 import * as Caml_splice_call from "rescript/lib/es6/caml_splice_call.js";
 import * as Caml_js_exceptions from "rescript/lib/es6/caml_js_exceptions.js";
@@ -126,13 +128,47 @@ function annotate(it, begin, end) {
         };
 }
 
-function stringAsSource(s) {
+function stringAsSource(ignoreLangLine, s) {
+  var re = /^[\s]*#lang[^\n]*[\n]*/g;
+  var match;
+  if (ignoreLangLine) {
+    var r = s.match(re);
+    if (r == null) {
+      match = [
+        {
+          ln: 0,
+          ch: 0
+        },
+        0
+      ];
+    } else {
+      var matchedString = Core__Option.getExn(Core__Option.getExn(r[0], undefined), undefined);
+      var i = matchedString.length;
+      var matchedString$1 = matchedString.split("\n");
+      var ln = matchedString$1.length - 1 | 0;
+      var ch = Core__Option.getOr(Core__Option.map(Core__Array.last(matchedString$1), (function (prim) {
+                  return prim.length;
+                })), 0);
+      match = [
+        {
+          ln: ln,
+          ch: ch
+        },
+        i
+      ];
+    }
+  } else {
+    match = [
+      {
+        ln: 0,
+        ch: 0
+      },
+      0
+    ];
+  }
   return {
-          srcloc: {
-            ln: 0,
-            ch: 0
-          },
-          i: 0,
+          srcloc: match[0],
+          i: match[1],
           content: s
         };
 }
@@ -168,14 +204,6 @@ function caseSource(source) {
             content: content
           }
         ];
-}
-
-function raiseError(x) {
-  throw {
-        RE_EXN_ID: SExpressionError,
-        _1: x,
-        Error: new Error()
-      };
 }
 
 function parseSymbol(start, firstCh, src) {
@@ -228,115 +256,7 @@ function parseSymbol(start, firstCh, src) {
   };
 }
 
-function parseString(start, src) {
-  var loop = function (_cs, _src) {
-    while(true) {
-      var src = _src;
-      var cs = _cs;
-      var match = caseSource(src);
-      if (match !== undefined) {
-        var chr = match[0];
-        if (chr === "\"") {
-          var src$1 = match[1];
-          var e = {
-            TAG: "Atom",
-            _0: {
-              TAG: "Str",
-              _0: Caml_splice_call.spliceObjApply("", "concat", [Core__List.toArray(Core__List.reverse(cs))])
-            }
-          };
-          return [
-                  annotate(e, start, src$1.srcloc),
-                  src$1
-                ];
-        }
-        var src$2 = match[1];
-        if (chr === "\\") {
-          var match$1 = caseSource(src$2);
-          if (match$1 !== undefined) {
-            var src$3 = match$1[1];
-            var chr$1 = match$1[0];
-            switch (chr$1) {
-              case "\"" :
-                  return loop({
-                              hd: "\"",
-                              tl: cs
-                            }, src$3);
-              case "n" :
-                  return loop({
-                              hd: "\n",
-                              tl: cs
-                            }, src$3);
-              case "r" :
-                  return loop({
-                              hd: "\r",
-                              tl: cs
-                            }, src$3);
-              case "t" :
-                  return loop({
-                              hd: "\t",
-                              tl: cs
-                            }, src$3);
-              default:
-                if (chr$1 === "\\") {
-                  return loop({
-                              hd: "\\",
-                              tl: cs
-                            }, src$3);
-                }
-                throw {
-                      RE_EXN_ID: SExpressionError,
-                      _1: {
-                        TAG: "WantEscapableCharFound",
-                        _0: chr$1
-                      },
-                      Error: new Error()
-                    };
-            }
-          } else {
-            throw {
-                  RE_EXN_ID: SExpressionError,
-                  _1: "WantStringFoundEOF",
-                  Error: new Error()
-                };
-          }
-        }
-        _src = src$2;
-        _cs = {
-          hd: chr,
-          tl: cs
-        };
-        continue ;
-      }
-      throw {
-            RE_EXN_ID: SExpressionError,
-            _1: "WantStringFoundEOF",
-            Error: new Error()
-          };
-    };
-  };
-  return loop(/* [] */0, src);
-}
-
 var EOF = /* @__PURE__ */Caml_exceptions.create("SExpression.SExpr.EOF");
-
-function forwardToEOL(_src, then) {
-  while(true) {
-    var src = _src;
-    var match = caseSource(src);
-    if (match !== undefined) {
-      if (match[0] === "\n") {
-        return then(match[1]);
-      }
-      _src = match[1];
-      continue ;
-    }
-    throw {
-          RE_EXN_ID: EOF,
-          Error: new Error()
-        };
-  };
-}
 
 var FoundRP = /* @__PURE__ */Caml_exceptions.create("SExpression.SExpr.FoundRP");
 
@@ -404,11 +324,115 @@ function parseOne(_src) {
                   Error: new Error()
                 };
         case ";" :
-            return forwardToEOL(match[1], parseOne);
+            var _src$1 = match[1];
+            while(true) {
+              var src$3 = _src$1;
+              var match$4 = caseSource(src$3);
+              if (match$4 !== undefined) {
+                if (match$4[0] === "\n") {
+                  return parseOne(match$4[1]);
+                }
+                _src$1 = match$4[1];
+                continue ;
+              }
+              throw {
+                    RE_EXN_ID: EOF,
+                    Error: new Error()
+                  };
+            };
         case "[" :
             return startParseList("List", "Square", start, match[1]);
         case "\"" :
-            return parseString(start, match[1]);
+            var src$4 = match[1];
+            var loop = (function(start){
+            return function loop(_cs, _src) {
+              while(true) {
+                var src = _src;
+                var cs = _cs;
+                var match = caseSource(src);
+                if (match !== undefined) {
+                  var chr = match[0];
+                  if (chr === "\"") {
+                    var src$1 = match[1];
+                    var e = {
+                      TAG: "Atom",
+                      _0: {
+                        TAG: "Str",
+                        _0: Caml_splice_call.spliceObjApply("", "concat", [Core__List.toArray(Core__List.reverse(cs))])
+                      }
+                    };
+                    return [
+                            annotate(e, start, src$1.srcloc),
+                            src$1
+                          ];
+                  }
+                  var src$2 = match[1];
+                  if (chr === "\\") {
+                    var match$1 = caseSource(src$2);
+                    if (match$1 !== undefined) {
+                      var src$3 = match$1[1];
+                      var chr$1 = match$1[0];
+                      switch (chr$1) {
+                        case "\"" :
+                            return loop({
+                                        hd: "\"",
+                                        tl: cs
+                                      }, src$3);
+                        case "n" :
+                            return loop({
+                                        hd: "\n",
+                                        tl: cs
+                                      }, src$3);
+                        case "r" :
+                            return loop({
+                                        hd: "\r",
+                                        tl: cs
+                                      }, src$3);
+                        case "t" :
+                            return loop({
+                                        hd: "\t",
+                                        tl: cs
+                                      }, src$3);
+                        default:
+                          if (chr$1 === "\\") {
+                            return loop({
+                                        hd: "\\",
+                                        tl: cs
+                                      }, src$3);
+                          }
+                          throw {
+                                RE_EXN_ID: SExpressionError,
+                                _1: {
+                                  TAG: "WantEscapableCharFound",
+                                  _0: chr$1
+                                },
+                                Error: new Error()
+                              };
+                      }
+                    } else {
+                      throw {
+                            RE_EXN_ID: SExpressionError,
+                            _1: "WantStringFoundEOF",
+                            Error: new Error()
+                          };
+                    }
+                  }
+                  _src = src$2;
+                  _cs = {
+                    hd: chr,
+                    tl: cs
+                  };
+                  continue ;
+                }
+                throw {
+                      RE_EXN_ID: SExpressionError,
+                      _1: "WantStringFoundEOF",
+                      Error: new Error()
+                    };
+              };
+            }
+            }(start));
+            return loop(/* [] */0, src$4);
         case "]" :
             throw {
                   RE_EXN_ID: FoundRP,
@@ -417,11 +441,11 @@ function parseOne(_src) {
                   Error: new Error()
                 };
         default:
-          var src$3 = match[1];
+          var src$5 = match[1];
           if (!/\s+/ig.test(chr)) {
-            return parseSymbol(start, chr, src$3);
+            return parseSymbol(start, chr, src$5);
           }
-          _src = src$3;
+          _src = src$5;
           continue ;
       }
     } else {
@@ -489,10 +513,12 @@ function startParseList(sequenceKind, bracket1, start, src) {
   };
 }
 
-function fromStringBeginning(src) {
+function fromStringBeginning(ignoreLangLineOpt, src) {
+  var ignoreLangLine = ignoreLangLineOpt !== undefined ? ignoreLangLineOpt : false;
+  var src$1 = stringAsSource(ignoreLangLine, src);
   var val;
   try {
-    val = parseOne(stringAsSource(src));
+    val = parseOne(src$1);
   }
   catch (raw_exn){
     var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
@@ -518,15 +544,17 @@ function fromStringBeginning(src) {
         ];
 }
 
-function fromString(src) {
+function fromString(ignoreLangLineOpt, src) {
+  var ignoreLangLine = ignoreLangLineOpt !== undefined ? ignoreLangLineOpt : false;
+  var src$1 = stringAsSource(ignoreLangLine, src);
   var _elms = /* [] */0;
-  var _src = stringAsSource(src);
+  var _src = src$1;
   while(true) {
-    var src$1 = _src;
+    var src$2 = _src;
     var elms = _elms;
     var val;
     try {
-      val = parseOne(src$1);
+      val = parseOne(src$2);
     }
     catch (raw_exn){
       var exn = Caml_js_exceptions.internalToOCamlException(raw_exn);
@@ -557,18 +585,6 @@ function fromString(src) {
 
 var SExpr = {
   toString: toString$6,
-  annotate: annotate,
-  stringAsSource: stringAsSource,
-  advance: advance,
-  caseSource: caseSource,
-  raiseError: raiseError,
-  parseSymbol: parseSymbol,
-  parseString: parseString,
-  EOF: EOF,
-  forwardToEOL: forwardToEOL,
-  FoundRP: FoundRP,
-  parseOne: parseOne,
-  startParseList: startParseList,
   fromStringBeginning: fromStringBeginning,
   fromString: fromString
 };

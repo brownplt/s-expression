@@ -112,8 +112,25 @@ module SExpr = {
     {it, ann: ({begin, end}: sourceLocation)}
   }
 
-  let stringAsSource = s => {
-    {srcloc: {ln: 0, ch: 0}, i: 0, content: s}
+  let stringAsSource = (ignoreLangLine, s) => {
+    let re = %re("/^[\s]*#lang[^\n]*[\n]*/g")
+    let (srcloc, i) = if ignoreLangLine {
+      switch String.match(s, re) {
+      | None => ({ln: 0, ch: 0}, 0)
+      | Some(r) => {
+          let matchedString: string = r[0]->Option.getExn->Option.getExn
+          let i = matchedString->String.length
+          let matchedString = matchedString->String.split("\n")
+          let ln = matchedString->Array.length - 1
+          let ch = Array.last(matchedString)->Option.map(String.length)->Option.getOr(0)
+          ({ln, ch}, i)
+        }
+      }
+    } else {
+      ({ln: 0, ch: 0}, 0)
+    }
+
+    {srcloc, i, content: s}
   }
 
   let advance = (srcloc: SourcePoint.t, char) => {
@@ -141,7 +158,7 @@ module SExpr = {
   let parseSymbol = (start, firstCh, src: source): (sexpr, source) => {
     let rec loop = (cs, src: source): (sexpr, source) => {
       let end = () => {
-        let e = Atom(Sym(String.concatMany("", List.reverse(cs) |> List.toArray)))
+        let e = Atom(Sym(String.concatMany("", List.toArray(List.reverse(cs)))))
         (annotate(e, start, src.srcloc), src)
       }
       switch caseSource(src) {
@@ -168,7 +185,7 @@ module SExpr = {
       switch caseSource(src) {
       | None => raiseError(WantStringFoundEOF)
       | Some((`"`, src)) => {
-          let e = Atom(Str(String.concatMany("", List.reverse(cs) |> List.toArray)))
+          let e = Atom(Str(String.concatMany("", List.toArray(List.reverse(cs)))))
           (annotate(e, start, src.srcloc), src)
         }
 
@@ -276,15 +293,17 @@ module SExpr = {
     parseList(list{}, src)
   }
 
-  let fromStringBeginning = (src: string) => {
-    switch parseOne(stringAsSource(src)) {
+  let fromStringBeginning = (~ignoreLangLine=false, src: string) => {
+    let src = stringAsSource(ignoreLangLine, src)
+    switch parseOne(src) {
     | (term, src) => Some(term, src.i)
     | exception EOF => None
     | exception FoundRP(bracket, src) => raiseError(ExtraClosingBracket(bracket, src.srcloc))
     }
   }
 
-  let fromString = (src: string) => {
+  let fromString = (~ignoreLangLine=false, src: string) => {
+    let src = stringAsSource(ignoreLangLine, src)
     let rec loop = (elms, src) => {
       switch parseOne(src) {
       | (elm, src) => loop(list{elm, ...elms}, src)
@@ -292,6 +311,6 @@ module SExpr = {
       | exception FoundRP(bracket, src) => raiseError(ExtraClosingBracket(bracket, src.srcloc))
       }
     }
-    loop(list{}, stringAsSource(src))
+    loop(list{}, src)
   }
 }
