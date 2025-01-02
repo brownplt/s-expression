@@ -64,6 +64,8 @@ test_parse(undefined, "\"foo\" \"bar\"", "\"foo\" \"bar\"");
 
 test_parse(undefined, "((a) () #t 42)", "((a) () #t 42)");
 
+test_parse(undefined, "#()", "#()");
+
 test_parse(undefined, "\"\\n\"", "\"\n\"");
 
 test_parse(undefined, "\"\\t\"", "\"\t\"");

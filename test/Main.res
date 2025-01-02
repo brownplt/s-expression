@@ -39,7 +39,10 @@ test_parse("#t", "#t")
 test_parse("#f", "#f")
 test_parse("42", "42")
 test_parse("\"foo\" \"bar\"", "\"foo\" \"bar\"")
+// test lists
 test_parse("((a) () #t 42)", "((a) () #t 42)")
+// test vectors
+test_parse("#()", "#()")
 // test string escape
 test_parse("\"\\n\"", "\"\n\"")
 test_parse("\"\\t\"", "\"\t\"")
