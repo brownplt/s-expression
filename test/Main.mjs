@@ -70,6 +70,12 @@ test_parse(undefined, "\"\\t\"", "\"\t\"");
 
 test_parse(undefined, "\"\\?\"", "Error: found an unexpected escape sequence (\\?).");
 
+test_parse(undefined, "'a", "(quote a)");
+
+test_parse(undefined, "'()", "(quote ())");
+
+test_parse(undefined, "'('a '(b c) d)", "(quote ((quote a) (quote (b c)) d))");
+
 test_parse(undefined, "#;(ignore this s-expression) 2 3", "2 3");
 
 test_parse(undefined, "\n;; ignroe this line\n2\n3\n", "2 3");

@@ -19,6 +19,7 @@ let test_parse = (~ignoreLangLine=false, str, wanted_result) => {
   }
 }
 
+// test matching deliminator
 test_parse("(", "Error: reached the end of the file while processing a list.")
 test_parse("\"", "Error: reached the end of the file while processing a string.")
 test_parse(
@@ -33,14 +34,20 @@ test_parse("()", "()")
 test_parse("[]", "[]")
 test_parse(")", "Error: found an extra closing round bracket at 1:1.")
 test_parse("]", "Error: found an extra closing square bracket at 1:1.")
+// test atoms
 test_parse("#t", "#t")
 test_parse("#f", "#f")
 test_parse("42", "42")
 test_parse("\"foo\" \"bar\"", "\"foo\" \"bar\"")
 test_parse("((a) () #t 42)", "((a) () #t 42)")
+// test string escape
 test_parse("\"\\n\"", "\"\n\"")
 test_parse("\"\\t\"", "\"\t\"")
 test_parse("\"\\?\"", "Error: found an unexpected escape sequence (\\?).")
+// test quote
+test_parse("'a", "(quote a)")
+test_parse("'()", "(quote ())")
+test_parse("'('a '(b c) d)", "(quote ((quote a) (quote (b c)) d))")
 // test comments
 test_parse("#;(ignore this s-expression) 2 3", "2 3")
 test_parse(`
